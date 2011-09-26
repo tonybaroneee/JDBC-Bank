@@ -1,4 +1,4 @@
-package bank.main;
+package domain.main;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
