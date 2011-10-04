@@ -15,7 +15,10 @@ import java.util.Locale;
  */
 public class BankMain {
 	
-	private static final NumberFormat usFormat = NumberFormat.getCurrencyInstance( Locale.US );  
+	private static final NumberFormat usFormat = NumberFormat.getCurrencyInstance( Locale.US );
+	
+	private final static String COLNAME_ACCTNUM = "AccountNumber";
+	private final static String COLNAME_ACCTBAL = "AccountBalance";
 
 	// Initialize MySQL DB information into class variables.
 	private static final String url = "jdbc:mysql://mentok.se.rit.edu:3306/acb1485";
@@ -36,7 +39,7 @@ public class BankMain {
 		ResultSet rs2 = null;
 		
 		// Specify the main queries used in our reporting mechanism.
-		String fetchAllAccountsQuery = "SELECT * FROM CheckingAccount";
+		String fetchAllAccountsQuery = "SELECT * FROM Account";
 		String fetchAllOwnersForAccount = "SELECT * FROM AccountOwnerAccount, AccountOwner " +
 				"WHERE AccountOwnerAccount.CheckingAccountID = ? " +
 				"AND AccountOwnerAccount.AccountOwnerID = AccountOwner.AccountOwnerID";

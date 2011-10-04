@@ -4,12 +4,12 @@ package domain.objects;
  * @author acb1485
  * @version 1.0
  */
-public enum TransactionType {	
-	CHECK("Check"), DEPOSIT("Deposit"), TRANSFER("Transfer"), INTEREST("Interest Payment");
+public enum FeeType {	
+	PRINTING("Check Printing"), OVERDRAFT("Overdraft"), WIRE("Wire Transfer");
 	
 	private String name;
 	
-	private TransactionType( String name ) {
+	private FeeType( String name ) {
 		this.name = name;
 	}
 	
