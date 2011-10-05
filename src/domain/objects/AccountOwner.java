@@ -9,14 +9,14 @@ public class AccountOwner {
 	private String firstName;
 	private String lastName;
 	private String ssn;
-	private String billingID;
+	private String addressID;
 	private String primaryPhone;
 	
-	public AccountOwner( String firstName, String lastName, String ssn, String billingID, String primaryPhone ) {
+	public AccountOwner( String firstName, String lastName, String ssn, String addressID, String primaryPhone ) {
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.ssn = ssn;
-		this.billingID = billingID;
+		this.addressID = addressID;
 		this.primaryPhone = primaryPhone;
 	}
 	
@@ -44,12 +44,12 @@ public class AccountOwner {
 		this.ssn = ssn;
 	}
 
-	public String getBillingID() {
-		return billingID;
+	public String getAddressID() {
+		return addressID;
 	}
 
-	public void setBillingID( String billingID ) {
-		this.billingID = billingID;
+	public void setAddressID( String addressID ) {
+		this.addressID = addressID;
 	}
 
 	public String getPrimaryPhone() {
