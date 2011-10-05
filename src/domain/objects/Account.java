@@ -41,14 +41,51 @@ public abstract class Account {
 		if ( feeType != null ) {
 			newTransaction = new Fee( timstamp, amount, type, feeType );
 			accountTransactions.add( newTransaction );
-			//TODO: adjust balance
 		} else if ( sourceAcct != null && destAcct != null ) {
 			newTransaction = new Transfer( timstamp, amount, type, sourceAcct, destAcct );
 			accountTransactions.add( newTransaction );
-			//TODO: adjust balance
 		} else {
 			newTransaction = new Transaction( timstamp, amount, feeType );
 		}
+		adjustBalance( newTransaction );
+	}
+	
+	public void adjustBalance( Transaction t ) {
+		if ( t.getType().getTypeName().equals( TransactionType.CHECK ) ||
+			 t.getType().getTypeName().equals( TransactionType.FEE ) ) {
+			this.accountBalance -= t.getAmount();
+		} else if ( t.getType().getTypeName().equals( TransactionType.DEPOSIT ) ||
+				t.getType().getTypeName().equals( TransactionType.INTEREST ) ) {
+			this.accountBalance += t.getAmount();
+		} else if ( t instanceof Transfer ) {
+			Transfer tempTransfer = (Transfer)t;
+			if ( tempTransfer.getSourceAcct().longValue() == this.accountNumber.longValue() ) {
+				this.accountBalance -= tempTransfer.getAmount();
+			} else {
+				this.accountBalance += tempTransfer.getAmount();
+			}
+		}
+	}
+	
+	public void recalculateBalance() {
+		double tempBalance = 0.0;
+		for ( Transaction t : accountTransactions ) {
+			if ( t.getType().getTypeName().equals( TransactionType.CHECK ) ||
+				 t.getType().getTypeName().equals( TransactionType.FEE ) ) {
+				tempBalance -= t.getAmount();
+			} else if ( t.getType().getTypeName().equals( TransactionType.DEPOSIT ) ||
+					t.getType().getTypeName().equals( TransactionType.INTEREST ) ) {
+				tempBalance += t.getAmount();
+			} else if ( t instanceof Transfer ) {
+				Transfer tempTransfer = (Transfer)t;
+				if ( tempTransfer.getSourceAcct().longValue() == this.accountNumber.longValue() ) {
+					tempBalance -= tempTransfer.getAmount();
+				} else {
+					tempBalance += tempTransfer.getAmount();
+				}
+			}
+		}
+		this.accountBalance = tempBalance;
 	}
 
 	public Long getAccountNumber() {

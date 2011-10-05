@@ -6,9 +6,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.NumberFormat;
-import java.util.Locale;
 
+import domain.objects.Report;
 import domain.objects.TransactionType;
 
 /**
@@ -16,22 +15,42 @@ import domain.objects.TransactionType;
  * @version 1.0
  */
 public class BankMain {
-	
-	private static final NumberFormat usFormat = NumberFormat.getCurrencyInstance( Locale.US );
-	
-	private final static String COLNAME_ACCTNUM = "AccountNumber";
-	private final static String COLNAME_ACCTBAL = "AccountBalance";
 
 	// Initialize MySQL DB information into class variables.
-	private static final String url = "jdbc:mysql://mentok.se.rit.edu:3306/acb1485";
-	private static final String user = "acb1485";
-	private static final String password = "Eigh7fiung";
+	private final static String url = "jdbc:mysql://mentok.se.rit.edu:3306/acb1485";
+	private final static String user = "acb1485";
+	private final static String password = "Eigh7fiung";
+	
+	// Used for Report #1
+	private final static String fetchAllAccountsQuery = "SELECT * FROM Account";
+	private final static String fetchAllOwnersForAccount = "SELECT * FROM AccountOwnerAccount, AccountOwner " +
+			"WHERE AccountOwnerAccount.AccountID = ? " +
+			"AND AccountOwnerAccount.AccountOwnerID = AccountOwner.AccountOwnerID";
+	
+	// Used for Report #2
+	private final static String fetchAllAccountsAbove5kQuery = "SELECT * FROM Account WHERE Balance>? ORDER BY Balance DESC";
+	
+	// Used for Report #3
+	private final static String fetchAllChecksWithin30DaysFromAccount = "SELECT * FROM Transaction " +
+			"LEFT JOIN TransactionType ON Transaction.TypeID = TransactionType.TypeID " +
+			"WHERE AccountID = ? " +
+			"AND TypeName = ? " +
+			"AND DATEDIFF(CURDATE(),DATE(Datestamp))<31";
+	
+	// Used for Report #4
+	private final static String fetchAllTransWithin30DaysFromAccountSorted = "SELECT * FROM Transaction " +
+			"LEFT JOIN FeeType ON Transaction.FeeTypeID = FeeType.TypeID " +
+			"LEFT JOIN TransactionType ON Transaction.TypeID = TransactionType.TypeID " +
+			"WHERE AccountID = ? " +
+			"AND DATEDIFF(CURDATE(),DATE(Datestamp))<31 " +
+			"ORDER BY TransactionType.TypeName, FeeType.TypeName";	
 
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public static void main( String[] args ) {
 		System.out.println( "Bank application started." );
+		System.out.println( "" );
 
 		// Initialize our JDBC variables.
 		Connection con = null;
@@ -39,20 +58,6 @@ public class BankMain {
 		PreparedStatement pst = null;
 		ResultSet rs = null;
 		ResultSet rs2 = null;
-		
-		
-		String fetchAllAccountsQuery = "SELECT * FROM Account";
-		String fetchAllOwnersForAccount = "SELECT * FROM AccountOwnerAccount, AccountOwner " +
-				"WHERE AccountOwnerAccount.AccountID = ? " +
-				"AND AccountOwnerAccount.AccountOwnerID = AccountOwner.AccountOwnerID";
-		
-		String fetchAllAccountsAbove5kQuery = "SELECT * FROM Account WHERE Balance>5000.00";
-		
-		String fetchTransactionTypeID = "SELECT TypeID FROM TransactionType WHERE TypeName=?";
-		String fetchAllChecksWithin30DaysFromAccount = "SELECT * FROM Transaction " +
-				"WHERE AccountID = ? " +
-				"AND TypeID = ? " +
-				"AND DATEDIFF(CURDATE(),DATE(Datestamp))<31";
 
 		try {
 			// Make the initial connection with our database.
@@ -60,7 +65,11 @@ public class BankMain {
 			con = DriverManager.getConnection( url, user, password );
 			System.out.println( "Connection was successfully established." );
 			
-			/////////// QUERY #1 /////////////
+			Report reporter = new Report();
+			
+			/**
+			 * Report #1: A list of all accounts, displaying the account number, account owners, and account balance.
+			 */
 
 			// Construct our query then execute it, storing the ResultSet.
 			st = con.createStatement();
@@ -68,63 +77,55 @@ public class BankMain {
 
 			// Print out the resulting rows.
 			while ( rs.next() ) {
-				System.out.print( "Account number: " + rs.getInt( 2 ) + 
-						" | Balance: " + usFormat.format( rs.getBigDecimal( 3 ) ) + 
-						" | Owners: " );
+				// Print out the account information.
+				reporter.formatAccountInfo( rs );
 				
 				// Find out who owns this particular checking account.
 				rs2 = null;
 				pst = con.prepareStatement( fetchAllOwnersForAccount );
 				pst.setInt( 1, rs.getInt(1) );
 				rs2 = pst.executeQuery();
-				boolean firstName = true;
-				if ( rs2.next() ) {
-					do {
-						if ( !firstName ) {
-							System.out.print( ", " );
-						} else {
-							firstName = false;
-						}
-						System.out.print( rs2.getString( 5 ) + " " + rs2.getString( 6 ) );
-					} while ( rs2.next() );
-				}
-				System.out.println();
+				
+				// Print out the account owners.
+				reporter.formatAccountOwners( rs2 );
 			}
 			
-			/////////// QUERY #2 /////////////
+			/**
+			 * Report #2: A list of all account numbers and account balance where the account balance is more than $5,000.
+			 */
 			
-			// Construct our query then execute it, storing the ResultSet.
-			st = con.createStatement();
-			rs = st.executeQuery( fetchAllAccountsAbove5kQuery );
+			// Construct our query then execute it, storing the ResultSet.			
+			pst = con.prepareStatement( fetchAllAccountsAbove5kQuery );
+			pst.setDouble( 1, 5000.00 );
+			rs = pst.executeQuery();
 
 			// Print out the resulting rows.
-			while ( rs.next() ) {
-				System.out.println( "Account number: " + rs.getInt( 2 ) + 
-						" | Balance: " + usFormat.format( rs.getBigDecimal( 3 ) ) );
-			}
+			reporter.formatAccountBalances( rs );
 			
-			/////////// QUERY #3 /////////////
+			/**
+			 * Report #3: For a given account (I chose Account #1), a list of all checks written in the past 30 calendar days
+			 */
 
 			// Construct our query then execute it, storing the ResultSet.
-			rs = null;
-			pst = null;
-			int checkID = -1;
-			pst = con.prepareStatement( fetchTransactionTypeID );
-			pst.setString( 1, TransactionType.CHECK.getTypeName() );
-			rs = pst.executeQuery();
-			if ( rs2.next() ) {
-				checkID = rs.getInt( 1 );
-			}
-
-			rs = null;
 			pst = con.prepareStatement( fetchAllChecksWithin30DaysFromAccount );
-			pst.setInt( 1, 1 ); // TODO: HARD-CODED ACCOUNT ID!!
-			pst.setInt( 2, 1 );
+			pst.setInt( 1, 1 );
+			pst.setString( 2, TransactionType.CHECK.getTypeName() );
 			rs = pst.executeQuery();
-			while ( rs.next() ) {
-				System.out.println( "Transaction ID: " + rs.getInt( 1 ) + 
-						" | Account ID: " + rs.getInt( 2 ) + " | Amount: " + usFormat.format( rs.getBigDecimal( 3 ) ) );
-			}
+			reporter.formatSpecificTransWithin30Days( rs ); 
+			
+			/**
+			 * Report #4:  For a given account (I chose Account #1), a list of all account transactions in the last 30 calendar days, 
+			 * 					grouped by transaction type: deposit, check, transfer, interest payment, and fee
+			 * 				*Challenge:  further subgroup by fee type: (check printing, overdraft, or wire transfer)
+			 */
+
+			// Construct our query then execute it, storing the ResultSet.
+			pst = con.prepareStatement( fetchAllTransWithin30DaysFromAccountSorted );
+			pst.setInt( 1, 1 );
+			rs = pst.executeQuery();
+			
+			// Print out the resulting transactions.
+			reporter.formatAllTransactionsWithin30Days( rs );
 			
 
 		} catch ( Exception e ) {

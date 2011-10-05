@@ -5,7 +5,7 @@ package domain.objects;
  * @version 1.0
  */
 public enum TransactionType {	
-	CHECK("Check"), DEPOSIT("Deposit"), TRANSFER("Transfer"), INTEREST("Interest Payment");
+	CHECK("Check"), DEPOSIT("Deposit"), TRANSFER("Transfer"), INTEREST("Interest Payment"), FEE("Fee");
 	
 	private String name;
 	
