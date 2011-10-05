@@ -75,7 +75,9 @@ public class BankMain {
 			st = con.createStatement();
 			rs = st.executeQuery( fetchAllAccountsQuery );
 
-			// Print out the resulting rows.
+			System.out.println();
+			System.out.println("Report #1: A list of all accounts, displaying the account number, account owners, and account balance.");
+			System.out.println("---");
 			while ( rs.next() ) {
 				// Print out the account information.
 				reporter.formatAccountInfo( rs );
@@ -100,6 +102,9 @@ public class BankMain {
 			rs = pst.executeQuery();
 
 			// Print out the resulting rows.
+			System.out.println();
+			System.out.println("Report #2: A list of all account numbers and account balance where the account balance is more than $5,000.");
+			System.out.println("---");
 			reporter.formatAccountBalances( rs );
 			
 			/**
@@ -111,6 +116,10 @@ public class BankMain {
 			pst.setInt( 1, 1 );
 			pst.setString( 2, TransactionType.CHECK.getTypeName() );
 			rs = pst.executeQuery();
+			
+			System.out.println();
+			System.out.println("Report #3: For a given account (I chose Account #1), a list of all checks written in the past 30 calendar days.");
+			System.out.println("---");
 			reporter.formatSpecificTransWithin30Days( rs ); 
 			
 			/**
@@ -125,6 +134,9 @@ public class BankMain {
 			rs = pst.executeQuery();
 			
 			// Print out the resulting transactions.
+			System.out.println();
+			System.out.println("Report #4: For a given account (I chose Account #1), a list of all account transactions in the last 30 calendar days (sort by Type,FeeType).");
+			System.out.println("---");
 			reporter.formatAllTransactionsWithin30Days( rs );
 			
 
